@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ff243d">
+<link rel="manifest" href="manifest.json">
+<title>Wer ist der Spion?</title>
+<style>
+:root{--red:#ff243d;--dark:#1c1c1e;--line:#3a3a3c;--muted:#a9a9af}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--red);color:#fff}
+button{font:inherit}
+.app{max-width:760px;min-height:100vh;margin:auto;background:var(--red)}
+.screen{min-height:100vh;padding:calc(22px + env(safe-area-inset-top)) 28px calc(28px + env(safe-area-inset-bottom));position:relative}
+.hidden{display:none!important}
+.top{display:flex;justify-content:space-between;align-items:center}
+.circle{width:58px;height:58px;border:0;border-radius:50%;background:#c8242d;color:#fff;font-size:32px}
+.topRight{display:flex;gap:14px}
+.logo{text-align:center;margin:58px 0 64px;text-transform:uppercase;font-style:italic;font-weight:1000;line-height:.86;text-shadow:0 8px 0 #8f161b;transform:skew(-5deg)}
+.logo small{display:block;font-size:34px}
+.logo strong{display:block;font-size:72px;-webkit-text-stroke:2px #fff;color:#ef332f}
+.card,.time{background:var(--dark);border-radius:32px;overflow:hidden}
+.row{display:grid;grid-template-columns:48px 1fr auto 22px;gap:12px;align-items:center;min-height:106px;padding:0 22px;font-size:24px}
+.row+.row{border-top:1px solid var(--line)}
+.value,.chev{color:var(--muted)}
+.chev{font-size:34px}
+.time{margin-top:54px;min-height:112px;padding:0 22px;display:flex;align-items:center;gap:14px;font-size:24px}
+.time b{flex:1}
+.switch{width:112px;height:56px;border-radius:999px;background:#636369;padding:4px}
+.switch span{display:block;width:48px;height:48px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:#31c759}.switch.on span{transform:translateX(56px)}
+.desc{text-align:center;font-size:21px;line-height:1.35;margin:36px 16px}
+.start{position:absolute;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);border:0;border-radius:999px;background:var(--dark);color:#fff;font-weight:800;font-size:27px;padding:20px 34px;min-width:280px}
+.sheetWrap{position:fixed;inset:0;background:#0008;display:grid;align-items:end;z-index:30}
+.sheet{background:#19191b;border-radius:30px 30px 0 0;padding:26px 28px calc(30px + env(safe-area-inset-bottom));width:min(100%,760px);margin:auto}
+.sheet h2{text-align:center}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:#2a2a2d;border-radius:18px;padding:14px}
+.stepper button{width:50px;height:50px;border-radius:50%;border:0;background:#444;color:white;font-size:30px}
+.done{width:100%;border:0;border-radius:18px;padding:17px;margin-top:16px;font-weight:800}
+.reveal{background:var(--red);overflow:hidden}
+.header{text-align:center;font-weight:800;font-size:26px;position:relative}
+.close{position:absolute;right:0;top:-12px;background:none;border:0;color:white;font-size:52px}
+.stage{position:relative;width:min(88vw,600px);height:min(58vh,760px);margin:120px auto 0}
+.secret,.cover{position:absolute;inset:0;border:5px solid white;border-radius:38px;overflow:hidden;box-shadow:0 8px 18px #0003}
+.secret{background:linear-gradient(#28282a,#111);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+.secret .emoji{font-size:90px}.secret .label{color:#aaa;font-weight:800;letter-spacing:2px}.secret .main{font-size:48px;font-weight:1000;margin:12px 0}.secret p{font-size:21px;color:#d7d7db}
+.cover{touch-action:none;background:radial-gradient(circle at 50% 34%,#7c513b 0 14%,transparent 15%),linear-gradient(145deg,#333,#151515);transition:transform .28s,opacity .28s;cursor:grab}
+.cover.dragging{transition:none}
+.cover.revealed{transform:translateY(-108%) rotate(-2deg)!important;opacity:.05;pointer-events:none}
+.playerTitle{text-align:center;font-size:54px;font-weight:1000;color:#ff2541;margin-top:28px}
+.person{text-align:center;font-size:180px;margin-top:50px}
+.hint{position:absolute;left:0;right:0;bottom:34px;text-align:center;font-size:25px;font-weight:900}.hint .arr{font-size:60px;line-height:.7}
+.help{position:absolute;left:30px;right:30px;bottom:calc(24px + env(safe-area-inset-bottom));text-align:center;font-size:19px;line-height:1.35}
+.overlay{position:fixed;inset:0;background:#0009;display:grid;place-items:center;z-index:40}
+.box{background:#1b1b1e;border-radius:26px;padding:24px;width:min(86vw,500px);text-align:center}
+.box button{width:100%;border:0;border-radius:16px;padding:16px;font-weight:800}
+.game{background:#242424}.panel{background:#161616;border-radius:26px;padding:24px;margin-top:28px}
+.timer{text-align:center;font-size:56px;font-weight:1000;font-variant-numeric:tabular-nums}
+.btns{display:flex;gap:12px}.btns button{flex:1;border:0;border-radius:16px;padding:16px;font-weight:800}
+.secondary{background:#3a3a3d;color:#fff}.danger{background:#ef3340;color:white}
+.voteItem{background:#2f2f32;border-radius:16px;padding:17px;margin:10px 0;font-size:21px}.voteItem.sel{outline:3px solid white}
+@media(max-width:520px){.logo strong{font-size:58px}.logo small{font-size:27px}.row{font-size:20px;min-height:91px}.time{font-size:21px;min-height:96px}.stage{margin-top:100px;height:56vh}.person{font-size:145px}.playerTitle{font-size:46px}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="home" class="screen">
+  <div class="top"><button class="circle">‹</button><div class="topRight"><button class="circle" id="help">?</button></div></div>
+  <div class="logo"><small>Wer ist der</small><strong>Spion</strong></div>
+  <div class="card">
+    <div class="row" id="playersRow"><div>☝️</div><b>Spieler</b><div class="value" id="playersVal">3</div><div class="chev">›</div></div>
+    <div class="row" id="spiesRow"><div>🕵️</div><b>Spion</b><div class="value" id="spiesVal">1</div><div class="chev">›</div></div>
+    <div class="row" id="categoryRow"><div>📍</div><b>Kategorien</b><div class="value">Geheime Orte</div><div class="chev">›</div></div>
+  </div>
+  <div class="time" id="timeRow"><div>⏰</div><b>Zeitlimit</b><div class="value" id="timeValue" style="margin-right:10px">Aus</div><div class="switch" id="timeSwitch"><span></span></div></div>
+  <div class="desc">Ein Spion versteckt sich unter euch. Findet ihn,<br>bevor er den Ort herausfindet.</div>
+  <button class="start" id="start">Spiel starten</button>
+</section>
+
+<section id="reveal" class="screen reveal hidden">
+  <div class="header">Wer ist der Spion<button class="close" id="close">×</button></div>
+  <div class="stage">
+    <div class="secret">
+      <div class="emoji" id="secretEmoji">📍</div>
+      <div class="label" id="secretLabel">DEIN ORT</div>
+      <div class="main" id="secretMain">Krankenhaus</div>
+      <p id="secretText">Merke dir deinen Ort.</p>
+    </div>
+    <div class="cover" id="cover">
+      <div class="playerTitle" id="playerTitle">Spieler 1</div>
+      <div class="person">🧑‍💼</div>
+      <div class="hint"><div class="arr">↑</div>Karte aufdecken</div>
+    </div>
+  </div>
+  <div class="help">Zieh deine Karte nach oben, um deinen Ort und deine Rolle zu sehen. Achte darauf, dass niemand anderes sie sieht.</div>
+</section>
+
+<section id="game" class="screen game hidden">
+  <div class="top"><button class="circle" id="homeBtn">‹</button><div style="font-size:26px;font-weight:800">Fragerunde</div><div style="width:58px"></div></div>
+  <div class="panel">
+    <div class="timer" id="timer">08:00</div>
+    <p style="text-align:center;color:#ccc">Stellt euch nacheinander Fragen zur geheimen Location.</p>
+    <div class="btns"><button class="secondary" id="pause">Pause</button><button class="danger" id="vote">Abstimmen</button></div>
+  </div>
+  <div class="panel hidden" id="votePanel"><h2>Wer ist der Spion?</h2><div id="voteList"></div><div class="btns"><button class="danger" id="resolve">Auflösen</button></div></div>
+  <div class="panel hidden" id="resultPanel"><div style="font-size:70px;text-align:center" id="resultEmoji">🏆</div><h2 style="text-align:center" id="resultTitle"></h2><p style="text-align:center;color:#ccc" id="resultText"></p><div class="btns"><button class="secondary" id="again">Neues Spiel</button></div></div>
+</section>
+
+
+<div id="timeSheetWrap" class="sheetWrap hidden">
+  <div class="sheet">
+    <h2>Zeitlimit</h2>
+    <div style="display:grid;gap:12px">
+      <button class="done timeChoice" data-min="5">5 Minuten</button>
+      <button class="done timeChoice" data-min="8">8 Minuten</button>
+      <button class="done timeChoice" data-min="10">10 Minuten</button>
+      <button class="done timeChoice" data-min="15">15 Minuten</button>
+      <button class="done timeChoice" data-min="20">20 Minuten</button>
+      <button class="done timeChoice" data-min="0" style="background:#3a3a3d;color:white">Ohne Zeitlimit</button>
+    </div>
+  </div>
+</div>
+
+<div id="sheetWrap" class="sheetWrap hidden"><div class="sheet"><h2 id="sheetTitle">Spieler</h2><div class="stepper"><button id="minus">−</button><strong id="stepVal" style="font-size:34px">3</strong><button id="plus">+</button></div><button class="done" id="done">Fertig</button></div></div>
+<div id="overlay" class="overlay hidden"><div class="box"><h2 id="nextTitle">Weitergeben</h2><p id="nextText">Gib das Handy weiter.</p><button id="next">Weiter</button></div></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const locationData={"Krankenhaus":["Arzt","Krankenschwester","Patient","Sanitäter","Chirurg","Empfangskraft","Besucher","Pflegekraft"],"Schule":["Lehrer","Schüler","Hausmeister","Direktor","Sekretärin","Schulsozialarbeiter","Sportlehrer","Referendar"],"Flughafen":["Pilot","Flugbegleiter","Passagier","Security-Mitarbeiter","Check-in-Mitarbeiter","Zollbeamter","Techniker","Bodenpersonal"],"Restaurant":["Koch","Kellner","Gast","Restaurantleiter","Barkeeper","Spülkraft","Sommelier","Lieferant"],"Strand":["Rettungsschwimmer","Tourist","Surfer","Eisverkäufer","Taucher","Fotograf","Muschel-Sammler","Beachvolleyballer"],"Kino":["Kinobesucher","Kassierer","Filmvorführer","Popcorn-Verkäufer","Reinigungskraft","Kinoleiter","Platzanweiser","Techniker"],"Supermarkt":["Kassierer","Kunde","Filialleiter","Lagerarbeiter","Metzger","Bäcker","Regaleinräumer","Security"],"Hotel":["Gast","Rezeptionist","Hotelmanager","Zimmermädchen","Koch","Page","Techniker","Concierge"],"Zoo":["Tierpfleger","Besucher","Tierarzt","Zooführer","Kassierer","Biologe","Fotograf","Futtermeister"],"Polizeistation":["Polizist","Kommissar","Verdächtiger","Zeuge","Empfangskraft","Forensiker","Anwalt","Wachbeamter"],"Fitnessstudio":["Trainer","Mitglied","Rezeptionist","Kursleiter","Bodybuilder","Physiotherapeut","Reinigungskraft","Studioleiter"],"Bahnhof":["Lokführer","Schaffner","Reisender","Kioskverkäufer","Bahnhofspersonal","Security","Techniker","Pendler"],"Museum":["Kurator","Besucher","Museumsführer","Restaurator","Security","Kassierer","Kunsthistoriker","Fotograf"],"Campingplatz":["Camper","Platzwart","Wanderer","Grillmeister","Familienvater","Angler","Rezeptionist","Zelt-Nachbar"],"Büro":["Chef","Angestellter","Praktikant","Sekretär","IT-Administrator","Buchhalter","Personalmanager","Kunde"],"Feuerwache":["Feuerwehrmann","Einsatzleiter","Sanitäter","Leitstellenmitarbeiter","Mechaniker","Besucher","Auszubildender","Fahrer"],"Bibliothek":["Bibliothekar","Student","Leser","Autor","Archivar","Hausmeister","Rechercheur","Schüler"],"Universität":["Professor","Student","Tutor","Dekan","Bibliothekar","Laborant","Hausmeister","Doktorand"],"Fußballstadion":["Spieler","Trainer","Schiedsrichter","Fan","Ordner","Kommentator","Sanitäter","Balljunge"],"Schwimmbad":["Bademeister","Schwimmer","Schwimmtrainer","Kind","Kassierer","Reinigungskraft","Springer","Elternteil"],"Freizeitpark":["Besucher","Achterbahn-Operator","Maskottchen","Kassierer","Techniker","Security","Imbissverkäufer","Fotograf"],"Baustelle":["Bauarbeiter","Architekt","Bauleiter","Elektriker","Kranführer","Maurer","Sicherheitsprüfer","Lieferant"],"Bank":["Bankberater","Kunde","Filialleiter","Kassierer","Security","Kreditberater","Azubi","Geldtransporter-Fahrer"],"Apotheke":["Apotheker","Kunde","Pharmazeutisch-technischer Assistent","Lieferant","Filialleiter","Praktikant","Patient","Bote"],"Bäckerei":["Bäcker","Verkäufer","Kunde","Konditor","Lieferant","Azubi","Filialleiter","Café-Gast"],"Friseursalon":["Friseur","Kunde","Salonleiter","Azubi","Stylist","Rezeptionist","Colorist","Wartender Kunde"],"Autowerkstatt":["Mechaniker","Kunde","Werkstattleiter","Azubi","Lackierer","TÜV-Prüfer","Reifenmonteur","Ersatzteil-Lieferant"],"Tankstelle":["Kassierer","Kunde","Tankwagenfahrer","Stationsleiter","Autofahrer","Reinigungskraft","Mechaniker","Lieferant"],"Bus":["Busfahrer","Fahrgast","Kontrolleur","Tourist","Schüler","Pendler","Senior","Reiseleiter"],"U-Bahn":["U-Bahn-Fahrer","Fahrgast","Kontrolleur","Security","Pendler","Tourist","Techniker","Reinigungskraft"],"Flugzeug":["Pilot","Co-Pilot","Flugbegleiter","Passagier","Air-Marshal","Techniker","Kind","Geschäftsreisender"],"Schiff":["Kapitän","Matrose","Passagier","Koch","Maschinist","Steward","Navigator","Tourist"],"Kreuzfahrtschiff":["Kapitän","Urlauber","Animateur","Kellner","Koch","Steward","Techniker","Sänger"],"Hafen":["Hafenarbeiter","Kapitän","Zollbeamter","LKW-Fahrer","Kranführer","Fischer","Security","Spediteur"],"Gericht":["Richter","Anwalt","Angeklagter","Zeuge","Staatsanwalt","Gerichtsdiener","Zuschauer","Protokollführer"],"Gefängnis":["Gefangener","Wärter","Gefängnisdirektor","Arzt","Besucher","Anwalt","Koch","Sozialarbeiter"],"Kirche":["Pfarrer","Besucher","Organist","Messdiener","Tourist","Küster","Braut","Chormitglied"],"Hochzeit":["Braut","Bräutigam","Trauzeuge","Fotograf","DJ","Kellner","Gast","Hochzeitsplaner"],"Geburtstagsparty":["Geburtstagskind","Gast","DJ","Elternteil","Kellner","Fotograf","Entertainer","Nachbar"],"Nachtclub":["DJ","Barkeeper","Gast","Türsteher","Tänzer","Clubmanager","Security","Kellner"],"Bar":["Barkeeper","Gast","Kellner","Stammgast","Musiker","Barbesitzer","Security","Lieferant"],"Café":["Barista","Gast","Kellner","Cafébesitzer","Student","Bäcker","Lieferant","Tourist"],"Casino":["Dealer","Spieler","Croupier","Security","Barkeeper","Casino-Manager","Kellner","High-Roller"],"Zirkus":["Clown","Artist","Domteur","Zuschauer","Direktor","Techniker","Kartenverkäufer","Akrobat"],"Theater":["Schauspieler","Regisseur","Zuschauer","Bühnenarbeiter","Maskenbildner","Kassierer","Souffleur","Beleuchter"],"Konzert":["Sänger","Gitarrist","Fan","Security","Tontechniker","Drummer","Veranstalter","Fotograf"],"Festival":["Festivalbesucher","DJ","Security","Sanitäter","Foodtruck-Verkäufer","Techniker","Camper","Fotograf"],"Fernsehstudio":["Moderator","Kameramann","Regisseur","Gast","Tontechniker","Maskenbildner","Produzent","Publikum"],"Filmset":["Schauspieler","Regisseur","Kameramann","Stuntman","Maskenbildner","Produzent","Beleuchter","Statist"],"Radiostudio":["Moderator","Gast","Tontechniker","Produzent","Redakteur","Praktikant","Nachrichtensprecher","Musiker"],"Zeitungsredaktion":["Journalist","Chefredakteur","Fotograf","Praktikant","Lektor","Grafiker","Reporter","Kolumnist"],"Labor":["Wissenschaftler","Laborant","Doktorand","Techniker","Professor","Praktikant","Sicherheitsbeauftragter","Forscher"],"Raumstation":["Astronaut","Kommandant","Wissenschaftler","Ingenieur","Arzt","Pilot","Funker","Techniker"],"Mondbasis":["Astronaut","Geologe","Ingenieur","Kommandant","Forscher","Techniker","Arzt","Pilot"],"U-Boot":["Kapitän","Sonaroperator","Maschinist","Matrose","Navigator","Koch","Techniker","Offizier"],"Militärbasis":["Soldat","Offizier","Mechaniker","Sanitäter","Koch","Wachposten","Pilot","Funker"],"Bauernhof":["Bauer","Tierarzt","Erntehelfer","Traktorfahrer","Kind","Milchfahrer","Tierpfleger","Besucher"],"Reiterhof":["Reitlehrer","Reiter","Pferdepfleger","Tierarzt","Stallmeister","Kind","Turnierreiter","Besucher"],"Tierarztpraxis":["Tierarzt","Tierhalter","Assistenz","Hundebesitzer","Katzenbesitzer","Rezeptionist","Praktikant","Tierpfleger"],"Arztpraxis":["Arzt","Patient","MFA","Rezeptionist","Praktikant","Pharmareferent","Besucher","Laborfahrer"],"Zahnarztpraxis":["Zahnarzt","Patient","Zahnarzthelfer","Rezeptionist","Kieferorthopäde","Azubi","Techniker","Elternteil"],"Kindergarten":["Erzieher","Kind","Elternteil","Leitung","Praktikant","Hausmeister","Koch","Logopäde"],"Spielplatz":["Kind","Elternteil","Großelternteil","Jogger","Hundebesitzer","Babysitter","Eisverkäufer","Hausmeister"],"Park":["Jogger","Hundebesitzer","Tourist","Gärtner","Picknicker","Fotograf","Radfahrer","Musiker"],"Botanischer Garten":["Gärtner","Besucher","Botaniker","Fotograf","Tourist","Guide","Student","Forscher"],"Skigebiet":["Skifahrer","Snowboarder","Skilehrer","Liftwart","Pistenretter","Hüttenwirt","Tourist","Pistenraupenfahrer"],"Berghütte":["Wanderer","Hüttenwirt","Bergführer","Koch","Übernachtungsgast","Kletterer","Rettungssanitäter","Förster"],"Wald":["Förster","Wanderer","Jäger","Pilzsammler","Biologe","Fotograf","Camper","Jogger"],"Wüste":["Forscher","Tourist","Guide","Fotograf","Geologe","Fahrer","Abenteurer","Archäologe"],"Dschungel":["Forscher","Guide","Biologe","Fotograf","Abenteurer","Arzt","Träger","Archäologe"],"Insel":["Tourist","Fischer","Hotelangestellter","Tauchlehrer","Bootsführer","Einheimischer","Rettungsschwimmer","Fotograf"],"Leuchtturm":["Leuchtturmwärter","Tourist","Techniker","Küstenwache","Fotograf","Seemann","Wetterbeobachter","Hausmeister"],"Fußballtraining":["Spieler","Trainer","Co-Trainer","Torwart","Physiotherapeut","Zeugwart","Elternteil","Scout"],"Tennisplatz":["Tennisspieler","Trainer","Schiedsrichter","Ballkind","Zuschauer","Platzwart","Physiotherapeut","Clubmanager"],"Golfplatz":["Golfer","Caddie","Greenkeeper","Trainer","Clubmanager","Kellner","Gast","Turnierleiter"],"Boxhalle":["Boxer","Trainer","Ringrichter","Zuschauer","Sanitäter","Cutman","Promoter","Kameramann"],"Rennstrecke":["Rennfahrer","Mechaniker","Teamchef","Boxencrew","Kommentator","Streckenposten","Fan","Fotograf"],"Autokino":["Besucher","Kassierer","Imbissverkäufer","Techniker","Ordner","Pärchen","Filmfan","Security"],"Einkaufszentrum":["Kunde","Verkäufer","Security","Center-Manager","Reinigungskraft","Lieferant","Kassierer","Tourist"],"Modegeschäft":["Verkäufer","Kunde","Filialleiter","Stylist","Kassierer","Lagerarbeiter","Model","Security"],"Elektronikmarkt":["Verkäufer","Kunde","Techniker","Kassierer","Filialleiter","Lagerarbeiter","Security","Berater"],"Möbelhaus":["Verkäufer","Kunde","Innenarchitekt","Kassierer","Lagerarbeiter","Lieferfahrer","Filialleiter","Monteur"],"Postfiliale":["Postmitarbeiter","Kunde","Briefträger","Paketbote","Filialleiter","Azubi","Logistiker","Schalterkraft"],"Paketzentrum":["Sortierer","Paketbote","LKW-Fahrer","Schichtleiter","Techniker","Scanner-Mitarbeiter","Security","Logistiker"],"Rathaus":["Bürgermeister","Sachbearbeiter","Bürger","Empfangskraft","Stadtrat","Hausmeister","Pressesprecher","Azubi"],"Parlament":["Abgeordneter","Journalist","Besucher","Security","Minister","Mitarbeiter","Kameramann","Protokollführer"],"Botschaft":["Botschafter","Diplomat","Besucher","Security","Dolmetscher","Konsularbeamter","Fahrer","Sekretär"],"Reisebüro":["Reiseberater","Kunde","Azubi","Filialleiter","Tourguide","Buchhalter","Telefonberater","Geschäftsreisender"],"Campingbus":["Fahrer","Mitfahrer","Camper","Kind","Navigator","Koch","Fotograf","Reiseblogger"],"Hostel":["Backpacker","Rezeptionist","Reinigungskraft","Hostelmanager","Tourist","Koch","Langzeitgast","Guide"],"Jugendherberge":["Schüler","Lehrer","Herbergsleiter","Koch","Reinigungskraft","Jugendlicher","Betreuer","Wanderer"],"Wellnesshotel":["Gast","Masseur","Rezeptionist","Saunameister","Kosmetiker","Hotelmanager","Kellner","Fitnesstrainer"],"Sauna":["Saunagast","Saunameister","Masseur","Reinigungskraft","Rezeptionist","Wellnessgast","Bademeister","Trainer"],"Therme":["Badegast","Bademeister","Saunameister","Masseur","Kassierer","Reinigungskraft","Familie","Therapeut"],"Beauty-Salon":["Kosmetiker","Kunde","Nageldesigner","Friseur","Rezeptionist","Salonleiter","Visagist","Azubi"],"Fotostudio":["Fotograf","Model","Assistent","Kunde","Visagist","Stylist","Bildbearbeiter","Produzent"],"Küche":["Koch","Souschef","Küchenhilfe","Spülkraft","Kellner","Restaurantleiter","Azubi","Lieferant"],"Großküche":["Koch","Küchenchef","Spülkraft","Lieferant","Ernährungsberater","Küchenhilfe","Hygienekontrolleur","Lagerist"],"Markt":["Händler","Kunde","Obstverkäufer","Fischhändler","Tourist","Marktleiter","Bäcker","Lieferant"],"Weihnachtsmarkt":["Glühweinverkäufer","Besucher","Bratwurstverkäufer","Kunsthandwerker","Security","Musiker","Tourist","Standbetreiber"],"Flohmarkt":["Verkäufer","Käufer","Sammler","Händler","Standbetreiber","Tourist","Organisator","Schnäppchenjäger"],"Waschsalon":["Kunde","Betreiber","Techniker","Student","Reinigungskraft","Tourist","Nachbar","Lieferant"]};
+const locations=Object.keys(locationData);
+let st={players:3,spies:1,timeOn:false,minutes:8,location:"",spyIdx:[],roles:[],reveal:0,time:480,int:null,paused:false,vote:null};
+function show(id){["home","reveal","game"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==id));scrollTo(0,0)}
+function sync(){
+  $("#playersVal").textContent=st.players;
+  $("#spiesVal").textContent=st.spies;
+  $("#timeSwitch").classList.toggle("on",st.timeOn);
+  $("#timeValue").textContent=st.timeOn ? `${st.minutes} Min.` : "Aus";
+}
+sync();
+let mode="players";
+function sheet(m){mode=m;$("#sheetTitle").textContent=m==="players"?"Spieler":"Spione";$("#stepVal").textContent=m==="players"?st.players:st.spies;$("#sheetWrap").classList.remove("hidden")}
+$("#playersRow").onclick=()=>sheet("players");$("#spiesRow").onclick=()=>sheet("spies");
+$("#minus").onclick=()=>{if(mode==="players")st.players=Math.max(3,st.players-1);else st.spies=Math.max(1,st.spies-1);if(st.spies>=st.players)st.spies=st.players-1;$("#stepVal").textContent=mode==="players"?st.players:st.spies}
+$("#plus").onclick=()=>{if(mode==="players")st.players=Math.min(12,st.players+1);else st.spies=Math.min(st.players-1,st.spies+1);$("#stepVal").textContent=mode==="players"?st.players:st.spies}
+$("#done").onclick=()=>{$("#sheetWrap").classList.add("hidden");sync()}
+$("#sheetWrap").onclick=e=>{if(e.target===$("#sheetWrap")){$("#sheetWrap").classList.add("hidden");sync()}}
+$("#timeRow").onclick=()=>$("#timeSheetWrap").classList.remove("hidden");
+document.querySelectorAll(".timeChoice").forEach(btn=>{
+  btn.onclick=()=>{
+    const min=Number(btn.dataset.min);
+    if(min===0){
+      st.timeOn=false;
+    }else{
+      st.timeOn=true;
+      st.minutes=min;
+    }
+    $("#timeSheetWrap").classList.add("hidden");
+    sync();
+  };
+});
+$("#timeSheetWrap").onclick=e=>{
+  if(e.target===$("#timeSheetWrap")) $("#timeSheetWrap").classList.add("hidden");
+};
+$("#categoryRow").onclick=()=>alert("Aktiv: Geheime Orte")
+$("#help").onclick=()=>alert("Alle kennen denselben geheimen Ort – außer dem Spion. Jeder normale Spieler erhält zusätzlich eine passende Rolle. Stellt euch Fragen, ohne den Ort direkt zu nennen.")
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function nextLocation(){
+  const storageKey="spion_location_bag_v2";
+  let bag=[];
+  try{
+    bag=JSON.parse(localStorage.getItem(storageKey)||"[]");
+    if(!Array.isArray(bag)) bag=[];
+  }catch(e){ bag=[]; }
+
+  bag=bag.filter(x=>locations.includes(x));
+
+  if(bag.length===0){
+    bag=shuffle([...locations]);
+  }
+
+  const chosen=bag.shift();
+  try{ localStorage.setItem(storageKey,JSON.stringify(bag)); }catch(e){}
+  return chosen;
+}
+function pickSpies(){let a=[...Array(st.players).keys()].sort(()=>Math.random()-.5);st.spyIdx=a.slice(0,st.spies)}
+function spy(i){return st.spyIdx.includes(i)}
+function assignRoles(){
+  const pool=[...(locationData[st.location]||["Besucher"])];
+  st.roles=[];
+  for(let i=0;i<st.players;i++){
+    if(spy(i)){st.roles[i]="Spion";continue}
+    if(pool.length===0) pool.push(...(locationData[st.location]||["Besucher"]));
+    const idx=Math.floor(Math.random()*pool.length);
+    st.roles[i]=pool.splice(idx,1)[0];
+  }
+}
+function prep(){
+  $("#playerTitle").textContent=`Spieler ${st.reveal+1}`;
+  $("#cover").classList.remove("revealed");$("#cover").style.transform="";$("#cover").style.opacity="";
+  if(spy(st.reveal)){ $("#secretEmoji").textContent="🕵️";$("#secretLabel").textContent="DU BIST DER SPION";$("#secretMain").textContent="Ort unbekannt";$("#secretText").textContent="Bleib unauffällig und finde den geheimen Ort heraus."; }
+  else { $("#secretEmoji").textContent="🎭";$("#secretLabel").textContent=`${st.location} · DEINE ROLLE`;$("#secretMain").textContent=st.roles[st.reveal];$("#secretText").textContent=`Ort: ${st.location}. Spiele als ${st.roles[st.reveal]} und verrate den Ort nicht zu offensichtlich.`; }
+}
+$("#start").onclick=()=>{st.location=nextLocation();pickSpies();assignRoles();st.reveal=0;prep();show("reveal")}
+$("#close").onclick=()=>show("home")
+let card=$("#cover"),sy=0,cy=0,drag=false,revealed=false;
+function y(e){return e.touches?e.touches[0].clientY:e.clientY}
+function down(e){if(revealed)return;drag=true;sy=cy=y(e);card.classList.add("dragging")}
+function move(e){if(!drag||revealed)return;cy=y(e);let dy=Math.min(0,cy-sy);card.style.transform=`translateY(${dy}px) rotate(${dy/140}deg)`;card.style.opacity=Math.max(.25,1+dy/650);if(e.cancelable)e.preventDefault()}
+function up(){if(!drag||revealed)return;drag=false;card.classList.remove("dragging");if(cy-sy<-120){revealed=true;card.classList.add("revealed");setTimeout(nextPrompt,380)}else{card.style.transform="";card.style.opacity=""}}
+card.addEventListener("touchstart",down,{passive:true});card.addEventListener("touchmove",move,{passive:false});card.addEventListener("touchend",up);card.addEventListener("mousedown",down);addEventListener("mousemove",move);addEventListener("mouseup",up);
+function nextPrompt(){
+  if(st.reveal<st.players-1){$("#nextTitle").textContent="Karte wieder verdecken";$("#nextText").textContent=`Gib das Handy danach an Spieler ${st.reveal+2} weiter.`;$("#next").textContent="Weitergeben"}
+  else{$("#nextTitle").textContent="Alle Rollen verteilt";$("#nextText").textContent="Jetzt beginnt die Fragerunde.";$("#next").textContent="Runde starten"}
+  $("#overlay").classList.remove("hidden")
+}
+$("#next").onclick=()=>{$("#overlay").classList.add("hidden");revealed=false;if(st.reveal<st.players-1){st.reveal++;prep()}else startGame()}
+function startGame(){
+  show("game");
+  $("#votePanel").classList.add("hidden");
+  $("#resultPanel").classList.add("hidden");
+  st.time=st.minutes*60;
+  st.paused=false;
+  $("#pause").textContent="Pause";
+  $("#pause").disabled=!st.timeOn;
+  clearInterval(st.int);
+
+  if(st.timeOn){
+    tick();
+    st.int=setInterval(()=>{
+      if(!st.paused){
+        st.time=Math.max(0,st.time-1);
+        tick();
+        if(st.time<=0){
+          clearInterval(st.int);
+          openVote();
+        }
+      }
+    },1000);
+  }else{
+    $("#timer").textContent="∞";
+  }
+}
+function tick(){let m=String(Math.floor(st.time/60)).padStart(2,"0"),s=String(st.time%60).padStart(2,"0");$("#timer").textContent=`${m}:${s}`}
+$("#pause").onclick=()=>{if(!st.timeOn)return;st.paused=!st.paused;$("#pause").textContent=st.paused?"Weiter":"Pause"}
+$("#vote").onclick=openVote;
+function openVote(){clearInterval(st.int);st.vote=null;$("#votePanel").classList.remove("hidden");let list=$("#voteList");list.innerHTML="";for(let i=0;i<st.players;i++){let d=document.createElement("div");d.className="voteItem";d.textContent=`Spieler ${i+1}`;d.onclick=()=>{[...list.children].forEach(x=>x.classList.remove("sel"));d.classList.add("sel");st.vote=i};list.appendChild(d)}}
+$("#resolve").onclick=()=>{if(st.vote===null){alert("Bitte wählt zuerst einen Spieler.");return}let caught=spy(st.vote);$("#votePanel").classList.add("hidden");$("#resultPanel").classList.remove("hidden");$("#resultEmoji").textContent=caught?"🎉":"🕵️";$("#resultTitle").textContent=caught?"Spion enttarnt!":"Falsche Person gewählt";$("#resultText").textContent=caught?`Spieler ${st.vote+1} war der Spion. Ort: ${st.location}.`:`Spieler ${st.vote+1} war kein Spion. Ort: ${st.location}.`}
+$("#again").onclick=()=>show("home");$("#homeBtn").onclick=()=>show("home");
+if("serviceWorker" in navigator){
+  addEventListener("load",async()=>{
+    try{
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const r of regs) await r.unregister();
+      if("caches" in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.map(k=>caches.delete(k)));
+      }
+    }catch(e){}
+  });
+}
+</script>
+</body>
+</html>
